@@ -15,8 +15,10 @@ func main() {
 		panic(err)
 	}
 	r := chi.NewRouter()
+	r.Route("/public", func(r chi.Router) {
+		r.Post("/user", controllers.Create)
+	})
 	r.Route("/user", func(r chi.Router) {
-		r.Post("/", controllers.Create)
 		r.Put("/{id}", controllers.Update)
 		r.Delete("/{id}", controllers.Delete)
 		r.Get("/", controllers.List)
