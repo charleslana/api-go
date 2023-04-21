@@ -5,6 +5,7 @@ import (
 	"api-go/controllers"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"log"
 	"net/http"
 )
 
@@ -21,6 +22,7 @@ func main() {
 		r.Get("/", controllers.List)
 		r.Get("/{id}", controllers.Get)
 	})
+	log.Printf("Server started on %s", configs.GetServerPort())
 	err = http.ListenAndServe(fmt.Sprintf(":%s", configs.GetServerPort()), r)
 	if err != nil {
 		return
