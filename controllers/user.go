@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func Create(w http.ResponseWriter, r *http.Request) {
@@ -130,6 +131,46 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		"Message": "Usuário removido com sucesso",
 	}
 	w.Header().Add("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		return
+	}
+}
+
+func Auth(w http.ResponseWriter, r *http.Request) {
+	var user entity.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		log.Printf("Erro ao fazer decode do json: %v", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	token, err := services.Auth(user)
+	var status = http.StatusOK
+	var resp map[string]any
+	if err != nil {
+		status = http.StatusForbidden
+		resp = map[string]any{
+			"Error":   true,
+			"Message": fmt.Sprintf("Ocorreu um erro ao tentar autenticar: %v", err),
+		}
+	} else {
+		resp = map[string]any{
+			"Error":   false,
+			"Message": fmt.Sprintf("Usuário autenticado com sucesso"),
+			"Token":   token,
+		}
+		http.SetCookie(w, &http.Cookie{
+			HttpOnly: true,
+			Expires:  time.Now().Add(7 * 24 * time.Hour),
+			SameSite: http.SameSiteLaxMode, // Uncomment below for HTTPS:
+			// Secure: true,
+			Name:  "jwt", // Must be named "jwt" or else the token cannot be searched for by jwtauth.Verifier.
+			Value: token,
+		})
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
 		return
