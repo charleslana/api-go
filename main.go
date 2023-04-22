@@ -20,6 +20,7 @@ func main() {
 	r.Route("/public", func(r chi.Router) {
 		r.Post("/user", controllers.Create)
 		r.Post("/auth", controllers.Auth)
+		r.Get("/version", controllers.GetVersion)
 	})
 	r.Group(func(r chi.Router) {
 		r.Use(jwtauth.Verifier(services.GetTokenAuth()))
