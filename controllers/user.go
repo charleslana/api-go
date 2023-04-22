@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/jwtauth/v5"
 	"log"
 	"net/http"
 	"strconv"
@@ -79,12 +80,15 @@ func Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func Get(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		log.Printf("Erro ao fazer parse do id: %v", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	//id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	//if err != nil {
+	//	log.Printf("Erro ao fazer parse do id: %v", err)
+	//	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	//	return
+	//}
+	_, claims, _ := jwtauth.FromContext(r.Context())
+	i := claims["id"].(float64)
+	id := int(i)
 	user, err := models.Get(int64(id))
 	if err != nil {
 		log.Printf("Erro ao buscar o usuário: %v", err)

@@ -122,3 +122,32 @@ func CheckPassword(password string, providedPassword string) error {
 	}
 	return nil
 }
+
+func GetByEmail(email string) (user entity.User, err error) {
+	conn, err := db.OpenConnection()
+	if err != nil {
+		return
+	}
+	defer func(conn *sql.DB) {
+		err := conn.Close()
+		if err != nil {
+			return
+		}
+	}(conn)
+	query := `SELECT id, email, password FROM tb_user WHERE email=$1`
+	row := conn.QueryRow(query, email)
+	err = row.Scan(&user.ID, &user.Email, &user.Password)
+	return
+}
+
+func GetUserDetails(u entity.User) (user entity.User, err error) {
+	user, err = GetByEmail(u.Email)
+	if err != nil {
+		return
+	}
+	err = CheckPassword(user.Password, u.Password)
+	if err != nil {
+		return
+	}
+	return
+}

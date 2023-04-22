@@ -3,6 +3,7 @@ package services
 import (
 	"api-go/models"
 	"api-go/models/entity"
+	"encoding/json"
 	"fmt"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -22,8 +23,8 @@ func Create(user entity.User) (id int64, err error) {
 	return id, err
 }
 
-func MakeToken(email string) string {
-	_, tokenString, _ := tokenAuth.Encode(map[string]interface{}{"email": email})
+func MakeToken(id int64, email string) string {
+	_, tokenString, _ := tokenAuth.Encode(map[string]interface{}{"id": id, "email": email})
 	return tokenString
 }
 
@@ -32,15 +33,39 @@ func Auth(user entity.User) (token string, err error) {
 		err = fmt.Errorf("email ou senha em branco")
 		return "", err
 	}
-	token = MakeToken(user.Email)
+	user, err = models.GetUserDetails(user)
+	if err != nil {
+		err = fmt.Errorf("email ou senha inválidos")
+		return "", err
+	}
+	token = MakeToken(user.ID, user.Email)
 	return token, nil
 }
 
 func AuthInterceptor(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, _, _ := jwtauth.FromContext(r.Context())
-		if token != nil && jwt.Validate(token) == nil {
-			http.Redirect(w, r, "/profile", 302)
+		token, _, err := jwtauth.FromContext(r.Context())
+		if err != nil {
+			resp := map[string]any{
+				"Error":   true,
+				"Message": err.Error(),
+			}
+			w.Header().Add("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			err = json.NewEncoder(w).Encode(resp)
+			//http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		if token == nil || jwt.Validate(token) != nil {
+			resp := map[string]any{
+				"Error":   true,
+				"Message": http.StatusText(http.StatusUnauthorized),
+			}
+			w.Header().Add("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			err = json.NewEncoder(w).Encode(resp)
+			//http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
 		}
 		next.ServeHTTP(w, r)
 	})
