@@ -19,6 +19,12 @@ func Create(user entity.User) (id int64, err error) {
 		err = fmt.Errorf("senha em branco")
 		return 0, err
 	}
+	var rows int64
+	rows, err = models.CountByEmail(user.Email)
+	if rows > 0 {
+		err = fmt.Errorf("já existe um e-mail cadastrado")
+		return 0, err
+	}
 	id, err = models.Insert(user)
 	return id, err
 }

@@ -140,6 +140,25 @@ func GetByEmail(email string) (user entity.User, err error) {
 	return
 }
 
+func CountByEmail(email string) (int64, error) {
+	conn, err := db.OpenConnection()
+	if err != nil {
+		return 0, nil
+	}
+	defer func(conn *sql.DB) {
+		err := conn.Close()
+		if err != nil {
+			return
+		}
+	}(conn)
+	query := `SELECT email FROM tb_user WHERE email=$1`
+	res, err := conn.Exec(query, email)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
 func GetUserDetails(u entity.User) (user entity.User, err error) {
 	user, err = GetByEmail(u.Email)
 	if err != nil {

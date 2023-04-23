@@ -22,6 +22,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	log.Printf("Solicitação de cadastro de usuário")
 	id, err := services.Create(user)
 	var status = http.StatusOK
 	var resp map[string]any
