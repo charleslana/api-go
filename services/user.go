@@ -53,8 +53,8 @@ func AuthInterceptor(next http.Handler) http.Handler {
 		token, _, err := jwtauth.FromContext(r.Context())
 		if err != nil {
 			resp := map[string]any{
-				"Error":   true,
-				"Message": err.Error(),
+				"error":   true,
+				"message": err.Error(),
 			}
 			w.Header().Add("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
@@ -64,8 +64,8 @@ func AuthInterceptor(next http.Handler) http.Handler {
 		}
 		if token == nil || jwt.Validate(token) != nil {
 			resp := map[string]any{
-				"Error":   true,
-				"Message": http.StatusText(http.StatusUnauthorized),
+				"error":   true,
+				"message": http.StatusText(http.StatusUnauthorized),
 			}
 			w.Header().Add("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
