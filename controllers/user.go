@@ -29,13 +29,13 @@ func Create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		status = http.StatusBadRequest
 		resp = map[string]any{
-			"Error":   true,
-			"Message": fmt.Sprintf("Ocorreu um erro ao tentar inserir: %v", err),
+			"error":   true,
+			"message": fmt.Sprintf("Ocorreu um erro ao tentar inserir: %v", err),
 		}
 	} else {
 		resp = map[string]any{
-			"Error":   false,
-			"Message": fmt.Sprintf("Usuário criado com sucesso, ID: %d", id),
+			"error":   false,
+			"message": fmt.Sprintf("Usuário criado com sucesso, ID: %d", id),
 		}
 	}
 	w.Header().Add("Content-Type", "application/json")
@@ -70,8 +70,8 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Erro: foram atualizados %d registros", rows)
 	}
 	resp := map[string]any{
-		"Error":   false,
-		"Message": "Usuário atualizado com sucesso",
+		"error":   false,
+		"message": "Usuário atualizado com sucesso",
 	}
 	w.Header().Add("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(resp)
@@ -132,8 +132,8 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Erro: foram removidos %d registros", rows)
 	}
 	resp := map[string]any{
-		"Error":   false,
-		"Message": "Usuário removido com sucesso",
+		"error":   false,
+		"message": "Usuário removido com sucesso",
 	}
 	w.Header().Add("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(resp)
@@ -156,14 +156,14 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		status = http.StatusForbidden
 		resp = map[string]any{
-			"Error":   true,
-			"Message": fmt.Sprintf("Ocorreu um erro ao tentar autenticar: %v", err),
+			"error":   true,
+			"message": fmt.Sprintf("Ocorreu um erro ao tentar autenticar: %v", err),
 		}
 	} else {
 		resp = map[string]any{
-			"Error":   false,
-			"Message": fmt.Sprintf("Usuário autenticado com sucesso"),
-			"Token":   token,
+			"error":   false,
+			"message": fmt.Sprintf("Usuário autenticado com sucesso"),
+			"token":   token,
 		}
 		http.SetCookie(w, &http.Cookie{
 			HttpOnly: true,
