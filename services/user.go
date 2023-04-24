@@ -29,8 +29,8 @@ func Create(user entity.User) (id int64, err error) {
 	return id, err
 }
 
-func MakeToken(id int64, email string) string {
-	_, tokenString, _ := tokenAuth.Encode(map[string]interface{}{"id": id, "email": email})
+func MakeToken(user entity.User) string {
+	_, tokenString, _ := tokenAuth.Encode(map[string]interface{}{"id": user.ID, "email": user.Email, "permissions": user.Permissions})
 	return tokenString
 }
 
@@ -44,7 +44,9 @@ func Auth(user entity.User) (token string, err error) {
 		err = fmt.Errorf("email ou senha inválidos")
 		return "", err
 	}
-	token = MakeToken(user.ID, user.Email)
+	permission, err := models.GetPermission(user.ID)
+	user.Permissions = permission
+	token = MakeToken(user)
 	return token, nil
 }
 
@@ -75,4 +77,51 @@ func AuthInterceptor(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func AllowRoles(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, claims, _ := jwtauth.FromContext(r.Context())
+		//claims["permissions"] = []string{"user", "admin"}
+		//fmt.Printf("%v", claims)
+		if claims["permissions"] == nil {
+			resp := map[string]any{
+				"error":   true,
+				"message": "Não permitido",
+			}
+			w.Header().Add("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			err := json.NewEncoder(w).Encode(resp)
+			if err != nil {
+				return
+			}
+			return
+		}
+		permissions := claims["permissions"].([]interface{})
+		if !containsRoles(permissions, "admin") {
+			resp := map[string]any{
+				"error":   true,
+				"message": "Não permitido",
+			}
+			w.Header().Add("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			err := json.NewEncoder(w).Encode(resp)
+			if err != nil {
+				return
+			}
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func containsRoles(p []interface{}, str string) bool {
+	for _, data := range p {
+		for _, v := range data.(map[string]interface{}) {
+			if v == str {
+				return true
+			}
+		}
+	}
+	return false
 }

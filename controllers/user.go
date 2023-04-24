@@ -47,19 +47,23 @@ func Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func Update(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		log.Printf("Erro ao fazer parse do id: %v", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	//id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	//if err != nil {
+	//	log.Printf("Erro ao fazer parse do id: %v", err)
+	//	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	//	return
+	//}
 	var user entity.User
-	err = json.NewDecoder(r.Body).Decode(&user)
+	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		log.Printf("Erro ao fazer decode do json: %v", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	_, claims, _ := jwtauth.FromContext(r.Context())
+	i := claims["id"].(float64)
+	id := int(i)
+	log.Printf("Solicitação de atualização de usuário")
 	rows, err := models.Update(int64(id), *user.Name)
 	if err != nil {
 		log.Printf("Erro ao atualizar o usuário: %v", err)
@@ -90,6 +94,7 @@ func Get(w http.ResponseWriter, r *http.Request) {
 	_, claims, _ := jwtauth.FromContext(r.Context())
 	i := claims["id"].(float64)
 	id := int(i)
+	log.Printf("Solicitação de detalhes de usuário")
 	user, err := models.Get(int64(id))
 	if err != nil {
 		log.Printf("Erro ao buscar o usuário: %v", err)
@@ -97,6 +102,8 @@ func Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Add("Content-Type", "application/json")
+	permission, err := models.GetPermission(user.ID)
+	user.Permissions = permission
 	err = json.NewEncoder(w).Encode(user)
 	if err != nil {
 		return
@@ -150,6 +157,7 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	log.Printf("Solicitação de autenticação de usuário")
 	token, err := services.Auth(user)
 	var status = http.StatusOK
 	var resp map[string]any

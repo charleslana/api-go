@@ -22,21 +22,23 @@ func main() {
 		r.Post("/auth", controllers.Auth)
 		r.Get("/version", controllers.GetVersion)
 	})
-	r.Group(func(r chi.Router) {
-		r.Use(jwtauth.Verifier(services.GetTokenAuth()))
-		r.Use(jwtauth.Authenticator)
-		r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
-			_, claims, _ := jwtauth.FromContext(r.Context())
-			w.Write([]byte(fmt.Sprintf("protected area. hi %v", claims["id"])))
-		})
-	})
+	//r.Group(func(r chi.Router) {
+	//	r.Use(jwtauth.Verifier(services.GetTokenAuth()))
+	//	r.Use(jwtauth.Authenticator)
+	//	r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
+	//		_, claims, _ := jwtauth.FromContext(r.Context())
+	//		w.Write([]byte(fmt.Sprintf("protected area. hi %v", claims["id"])))
+	//	})
+	//})
 	r.Route("/user", func(r chi.Router) {
 		r.Use(jwtauth.Verifier(services.GetTokenAuth()))
 		r.Use(services.AuthInterceptor)
-		r.Put("/{id}", controllers.Update)
-		r.Delete("/{id}", controllers.Delete)
-		r.Get("/", controllers.List)
-		//r.Get("/{id}", controllers.Get)
+		r.Group(func(r chi.Router) {
+			r.Use(services.AllowRoles)
+			r.Delete("/{id}", controllers.Delete)
+			r.Get("/", controllers.List)
+		})
+		r.Put("/", controllers.Update)
 		r.Get("/details", controllers.Get)
 	})
 	log.Printf("Server started on %s", configs.GetServerPort())

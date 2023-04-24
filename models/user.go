@@ -170,3 +170,30 @@ func GetUserDetails(u entity.User) (user entity.User, err error) {
 	}
 	return
 }
+
+func GetPermission(id int64) (permissions []entity.UserPermission, err error) {
+	conn, err := db.OpenConnection()
+	if err != nil {
+		return
+	}
+	defer func(conn *sql.DB) {
+		err := conn.Close()
+		if err != nil {
+			return
+		}
+	}(conn)
+	query := `SELECT * FROM tb_permission WHERE user_id=$1`
+	rows, err := conn.Query(query, id)
+	if err != nil {
+		return
+	}
+	for rows.Next() {
+		var permission entity.UserPermission
+		err = rows.Scan(&permission.ID, &permission.Name, &permission.UserId)
+		if err != nil {
+			continue
+		}
+		permissions = append(permissions, permission)
+	}
+	return
+}
