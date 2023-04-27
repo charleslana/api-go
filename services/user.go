@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	"net/http"
+	"strings"
 )
 
 func Create(user entity.User) (id int64, err error) {
@@ -22,11 +23,29 @@ func Create(user entity.User) (id int64, err error) {
 	var rows int64
 	rows, err = models.CountByEmail(user.Email)
 	if rows > 0 {
-		err = fmt.Errorf("já existe um e-mail cadastrado")
+		err = fmt.Errorf("já existe o e-mail cadastrado")
 		return 0, err
 	}
 	id, err = models.Insert(user)
 	return id, err
+}
+
+func Update(id int64, user entity.User) (rows int64, err error) {
+	n := strings.TrimSpace(*user.Name)
+	if n == "" {
+		err = fmt.Errorf("nome em branco")
+		return 0, err
+	}
+	rows, err = models.CountByName(n)
+	if rows > 0 {
+		userExist, _ := models.GetByName(n)
+		if userExist.ID != id && strings.EqualFold(n, *userExist.Name) {
+			err = fmt.Errorf("já existe o nome cadastrado")
+			return 0, err
+		}
+	}
+	rows, err = models.Update(id, n)
+	return rows, err
 }
 
 func MakeToken(user entity.User) string {

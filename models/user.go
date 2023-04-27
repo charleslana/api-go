@@ -151,7 +151,7 @@ func CountByEmail(email string) (int64, error) {
 			return
 		}
 	}(conn)
-	query := `SELECT email FROM tb_user WHERE email=$1`
+	query := `SELECT email FROM tb_user WHERE UPPER(email) = UPPER($1)`
 	res, err := conn.Exec(query, email)
 	if err != nil {
 		return 0, err
@@ -195,5 +195,38 @@ func GetPermission(id int64) (permissions []entity.UserPermission, err error) {
 		}
 		permissions = append(permissions, permission)
 	}
+	return
+}
+
+func CountByName(name string) (rows int64, err error) {
+	conn, err := db.OpenConnection()
+	if err != nil {
+		return
+	}
+	defer func(conn *sql.DB) {
+		err := conn.Close()
+		if err != nil {
+			return
+		}
+	}(conn)
+	query := `SELECT id, name FROM tb_user WHERE UPPER(name) = UPPER($1)`
+	res, err := conn.Exec(query, name)
+	return res.RowsAffected()
+}
+
+func GetByName(name string) (user entity.User, err error) {
+	conn, err := db.OpenConnection()
+	if err != nil {
+		return
+	}
+	defer func(conn *sql.DB) {
+		err := conn.Close()
+		if err != nil {
+			return
+		}
+	}(conn)
+	query := `SELECT id, name FROM tb_user WHERE UPPER(name) = UPPER($1)`
+	row := conn.QueryRow(query, name)
+	err = row.Scan(&user.ID, &user.Name)
 	return
 }

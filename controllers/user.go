@@ -47,12 +47,6 @@ func Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func Update(w http.ResponseWriter, r *http.Request) {
-	//id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	//if err != nil {
-	//	log.Printf("Erro ao fazer parse do id: %v", err)
-	//	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	//	return
-	//}
 	var user entity.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
@@ -64,20 +58,26 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	i := claims["id"].(float64)
 	id := int(i)
 	log.Printf("Solicitação de atualização de usuário")
-	rows, err := models.Update(int64(id), *user.Name)
+	rows, err := services.Update(int64(id), user)
+	var status = http.StatusOK
+	var resp map[string]any
 	if err != nil {
-		log.Printf("Erro ao atualizar o usuário: %v", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		status = http.StatusBadRequest
+		resp = map[string]any{
+			"error":   true,
+			"message": fmt.Sprintf("Ocorreu um erro ao tentar atualizar: %v", err),
+		}
+	} else {
+		resp = map[string]any{
+			"error":   false,
+			"message": "Usuário atualizado com sucesso",
+		}
 	}
 	if rows > 1 {
 		log.Printf("Erro: foram atualizados %d registros", rows)
 	}
-	resp := map[string]any{
-		"error":   false,
-		"message": "Usuário atualizado com sucesso",
-	}
 	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
 		return
@@ -85,12 +85,6 @@ func Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func Get(w http.ResponseWriter, r *http.Request) {
-	//id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	//if err != nil {
-	//	log.Printf("Erro ao fazer parse do id: %v", err)
-	//	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	//	return
-	//}
 	_, claims, _ := jwtauth.FromContext(r.Context())
 	i := claims["id"].(float64)
 	id := int(i)
