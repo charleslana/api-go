@@ -3,6 +3,7 @@ package main
 import (
 	"api-go/configs"
 	"api-go/controllers"
+	userCharacter "api-go/controllers/user_character"
 	"api-go/services"
 	"fmt"
 	"github.com/go-chi/chi/v5"
@@ -40,6 +41,13 @@ func main() {
 		})
 		r.Put("/", controllers.Update)
 		r.Get("/details", controllers.Get)
+	})
+	r.Route("/user/character", func(r chi.Router) {
+		r.Use(jwtauth.Verifier(services.GetTokenAuth()))
+		r.Use(services.AuthInterceptor)
+		r.Get("/{id}", userCharacter.Get)
+		r.Get("/", userCharacter.List)
+		r.Put("/", userCharacter.Update)
 	})
 	log.Printf("Server started on %s", configs.GetServerPort())
 	err = http.ListenAndServe(fmt.Sprintf(":%s", configs.GetServerPort()), r)

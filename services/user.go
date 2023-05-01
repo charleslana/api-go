@@ -2,7 +2,9 @@ package services
 
 import (
 	"api-go/models"
+	characterModel "api-go/models/character"
 	"api-go/models/entity"
+	userCharacterService "api-go/services/user_character"
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/jwtauth/v5"
@@ -27,6 +29,21 @@ func Create(user entity.User) (id int64, err error) {
 		return 0, err
 	}
 	id, err = models.Insert(user)
+	for i := 1; i <= 4; i++ {
+		c, err := characterModel.Get(int64(i))
+		if err != nil {
+			continue
+		}
+		slot := int8(i)
+		if i == 4 {
+			slot = 0
+		}
+		var uc = entity.UserCharacter{Level: 1, HpMin: c.Hp, CharacterId: int64(i), UserId: id, Slot: slot}
+		_, err = userCharacterService.Create(uc)
+		if err != nil {
+			continue
+		}
+	}
 	return id, err
 }
 
