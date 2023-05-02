@@ -2,8 +2,10 @@ package controllers
 
 import (
 	"api-go/models"
+	characterModel "api-go/models/character"
 	"api-go/models/entity"
 	"api-go/services"
+	userCharacterService "api-go/services/user_character"
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
@@ -95,6 +97,25 @@ func Get(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	ucs, err := userCharacterService.List(int64(id))
+	if err != nil {
+		log.Printf("Erro ao obter personagens: %v", err)
+	}
+	var array []entity.UserCharacter
+	if len(ucs) == 0 {
+		array = []entity.UserCharacter{}
+	} else {
+		for _, uc := range ucs {
+			c, err := characterModel.Get(uc.CharacterId)
+			if err != nil {
+				continue
+			}
+			uc.Character = c
+			uc.HpMax = userCharacterService.CalculateHp(uc)
+			array = append(array, uc)
+		}
+	}
+	user.Characters = array
 	w.Header().Add("Content-Type", "application/json")
 	permission, err := models.GetPermission(user.ID)
 	user.Permissions = permission
